@@ -10,6 +10,8 @@ import re
 
 regex = re.compile(r'-?\d+')
 
+
+info = [];
 red = ['Afrutado','Especiado','Joven','Barrica','Ligero','Cuerpo']
 white = ['Joven','Barrica','Ligero','Cuerpo','Poco aromático','Muy aromático']
 rose = ['Afrutado','Especiado','Ligero','Cuerpo','Pálido','Intenso']
@@ -26,7 +28,7 @@ class IC:
         return info
     def _add_wine(self,info):
         base = []
-        for i in range(0,6):
+        for i in range(0,3):
             try:
                 keys = info['var' + str(i+1)]
                 base.extend(list(keys))
@@ -46,33 +48,24 @@ class IC:
             self.bubbly.append(self._replace_keys(bubbly,info))
 
 
-    def writeHeaders(self,wine,name):
-        workbook = xlsxwriter.Workbook("infovinos_{}.xlsx".format(name))
+    def writeHeaders(self):
+        print("creating document")
+        workbook = xlsxwriter.Workbook("infovinos_{}.xlsx")
         worksheet = workbook.add_worksheet(name='Sheet1')
         cell_format = workbook.add_format({'bold': True, 'bg_color': '#92D050'})
         worksheet.write(0, 0,"nombre",cell_format)
-        worksheet.write(0, 1,"poblacion",cell_format)
+        worksheet.write(0, 1,"origen",cell_format)
         worksheet.write(0, 2,"email",cell_format)
         worksheet.write(0, 3,"telefono",cell_format)
-        col = 4
-        for index,value in enumerate(wine):
-             worksheet.write(0, col,value,cell_format)
-             col += 1
-        worksheet.write(0, col,"image",cell_format)
 
         return workbook, worksheet
 
-    def write_contents(self,wines,names,worksheet,workbook):
-        for index,info in enumerate(wines):
-            worksheet.write(index+1, 0,info["nombre"])
-            worksheet.write(index+1, 1,info["poblacion"])
-            worksheet.write(index+1, 2,info["email"])
-            worksheet.write(index+1, 3,info["telefono"])
-            col = 4
-            for name in names:
-                worksheet.write(index+1, col,info[name])
-                col += 1
-            worksheet.write(index+1, col,info["image"])
+    def write_contents(self,worksheet,workbook):
+        for index,wine in enumerate(info):
+            worksheet.write(index+1, 0,wine["nombre"])
+            worksheet.write(index+1, 1,wine["origen"])
+            worksheet.write(index+1, 2,wine["email"])
+            worksheet.write(index+1, 3,wine["telefono"])
         workbook.close()
 
     def write_concrete(self):
@@ -82,24 +75,9 @@ class IC:
     def writeLists(self):
         names = ['red','white','rose','generous','sweet''bubbly']
         # Iterate both lists at the same time
-        for name in names:
-            if os.path.exists("infovines_{}.xlsx".format(name)):
-                os.remove("infovines_{}.xlsx".format(name))
         # TODO: potser trobar una millor forma d'estructuarar
-        workbook, worksheet = self.writeHeaders(red,'red')
-        self.write_contents(self.red,red,worksheet,workbook)
-        workbook, worksheet = self.writeHeaders(white,'white')
-        self.write_contents(self.white,white,worksheet,workbook)
-        workbook, worksheet = self.writeHeaders(rose,'rose')
-        self.write_contents(self.rose,rose,worksheet,workbook)
-        workbook, worksheet = self.writeHeaders(generous,'generous')
-        self.write_contents(self.generous,generous,worksheet,workbook)
-        workbook, worksheet = self.writeHeaders(sweet,'sweet')
-        self.write_contents(self.sweet,sweet,worksheet,workbook)
-        workbook, worksheet = self.writeHeaders(bubbly,'bubbly')
-        self.write_contents(self.bubbly,bubbly,worksheet,workbook)
-
-
+        workbook, worksheet = self.writeHeaders()
+        self.write_contents(worksheet,workbook)
 
     def feedSoup(self,soup):
         """
@@ -115,86 +93,10 @@ class IC:
 
         """
         content = soup.body.find_all("dd")
+        info.append({ 'nombre': soup.body.find("big").text if soup.body.find("big").text else "No hi ha", 'email': content[4].text if content[4].text else "No hi ha", 'telefono': content[5].text if content[5].text else "No hi ha", 'origen': content[10].text if content[10].text else "No hi ha"})
         
-        for item in content:
-            
-        
-        info = {'header' : parser[0].text}
-        try:
-            info['description'] =  soup.body.find("h4",class_="block-head-line nopadding-left col-xs-12").text
-        except AttributeError:
-            info['description'] = "Na"
-        info['name'] = soup.body.find_all("div", class_="page-heading")[1].text.strip()
-        # self.info['Origin'] = parser[1].find_all("span")[2].text
-        info['cellar'] = parser[2].text.split(":")[1].strip()
-        info["originRegion"] = parser[1].text.split(":")[1].strip()
-        try:
-            info['grapeTypes'] = soup.body.find("div",class_="col-md-12 col-xs-12 feature-product nopadding variedad").text.split(":")[1].strip()
-        except AttributeError:
-            info['grapeTypes'] = "Na"
-        info['originName'] = soup.body.find("div", class_="col-md-12 col-xs-12 feature-product supplier nopadding").text.split(":")[1].strip()
-        aux = soup.body.find("div",class_="col-md-12 col-xs-12 feature-product nopadding capacidad").text.split(":")[1].strip().split(" ")[0]
-        aux = float("0." + aux.replace(',',''))
-        info['volume'] = aux
-        info['graduation'] = soup.body.find("div",class_="col-md-12 feature-product nopadding").text.split(":")[1].strip()
-        """
-        TODO: S'ha d'ajustar la puntuacio que ens donen de les caracteristiques dels vins a les nostres
-        """
-        scores_fig = soup.body.find_all("div",class_="col-xs-12 col-sm-4 col-md-3")
-        for index,score in enumerate(scores_fig):
-            spans = score.find_all("span")
-            #Depenent de quina posicio de l'array estigui "css-shapes selected" sabem quin es el bo
-            name1 =  spans[0].text.strip()
-            name2 = spans[2].text.strip()
-            divs = spans[1].find_all("div")
-            num = 0
-            for num,div in enumerate(divs):
-                if len(div.get("class")) == 2:
-                    break
-            num = round(num/9 *10)
-            info['var' + str(1+index*2)] = {name1:num}
-            info['var' + str((1+index)*2)] = {name2:10-num}
-
-
-
-        info['price'] = "Na"
-        info['iva'] = "Na"
-        #si no hi ha stock no es pot agafar preu
-        try:
-            aux = soup.body.find("span",class_="price product-price")
-            cost = aux.text.split("€")[0].strip()
-            info['price'] = float(cost.replace(",","."))
-            info['iva'] = not aux.find("span",class_="tax_literal").text is ''
-        except Exception:
-            print("No preu")
-            print(info['name'])
-        try:
-            info['service'] = soup.body.find("span",class_="temperature").text
-        except Exception:
-            info['service'] = 'Na'
-        try:
-            info['allergens'] = soup.body.find("div",class_="grados col-xs-9").find("strong").text
-        except Exception:
-            info['allergens'] = 'Na'
-        try:
-            info['pairing'] = soup.body.find("div",class_="maridaje col-xs-9").find("div",class_="recommendation").text.strip()
-        except Exception:
-            info['pairing'] = 'Na'
-        info['parkerPoints'] = "Na"
-        info['peñin'] = "Na"
-        scorers = soup.body.find_all("li",class_="score")
-        for scorer in scorers:
-            if "Parker" in scorer.text:
-                 value = scorer.text.split("Parker")[1].strip()
-                 info['parkerPoints'] = abs(int(regex.findall(string = value)[0]))
-                 break
-        # Tecnicament el primer que trobem es el de la fitxa de preus de l'ultim any
-        info['year'] = soup.body.find("li", class_="active").text.strip()
-        info['image'] = soup.body.find(id="thumbs_list_frame").a.get("href")
-
-        self._add_wine(info)
-
     def __init__(self):
+        self.info = []
         self.red = []
         self.white = []
         self.rose = []

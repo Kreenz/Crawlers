@@ -8,7 +8,9 @@ import urllib.request
 from bs4 import BeautifulSoup
 import time
 from decantaloCrawler import DC
+from infovinesCrawler import IC
 DCcrawler = DC()
+ICcrawler = IC()
 urls = []
 urls_champ = []
 
@@ -78,13 +80,13 @@ def main(urls):
         soup = htmlPageRead(url,'html5lib')
         try:
             print(index)
-            #DCcrawler.feedSoup(soup)
+            ICcrawler.feedSoup(soup)
         except Exception as e:
             print(e)
             print('url : {} \nIteration : {}'.format(url,index))
         # Fem un sleep de 1 s per a complir amb crawl-delay: 1 del robots.txt
         time.sleep(1)
-    #DCcrawler.writeLists()
+    ICcrawler.writeLists()
 
 if __name__ == "__main__":
     # catalunya
