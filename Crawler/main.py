@@ -96,10 +96,10 @@ def urlCatcher(baseurl,page,depth):
 
 def main(urls):
     print(len(urls))
+    driver = webdriver.Chrome()
     for index,url in enumerate(urls):
         #if index > 30:
          #   break
-        driver = webdriver.Chrome()
         driver.get(url)
         webTarget = WebDriverWait(driver, 30).until(lambda x: x.find_elements_by_xpath("//a[@href]"))
         elements = driver.find_elements_by_xpath("//a[@href]")
@@ -131,9 +131,10 @@ if __name__ == "__main__":
     soup.body.find("a",class_="product-name").get('href')
     """
     urls = [];
+    
     urls_champ = [];
     #urls = urlCatcher("https://www.decantalo.com","/es/vino/",0)
-    urls = urlCatcher("https://www.infovinos.es","/bodegas",0)
+    urls = urlCatcher("https://www.infovinos.es","/bodegas?start=810",0)
     #urls = urlCatcher("https://www.decantalo.com","/es/vino/",0)
     #urls_champ = urlCatcher("https://www.decantalo.com","/es/espumosos/",0)
     #urls.extend(urls_champ)
