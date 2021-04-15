@@ -79,7 +79,7 @@ class IC:
         workbook, worksheet = self.writeHeaders()
         self.write_contents(worksheet,workbook)
 
-    def feedSoup(self,soup):
+    def feedSoup(self,soup, correo):
         """
         "Feeds" the soup to be parsed in order to add a wine.
         Parameters
@@ -92,8 +92,8 @@ class IC:
         None.
 
         """
-        content = soup.body.find_all("dd")
-        info.append({ 'nombre': soup.body.find("big").text if soup.body.find("big").text else "No hi ha", 'email': content[4].text if content[4].text else "No hi ha", 'telefono': content[5].text if content[5].text else "No hi ha", 'origen': content[10].text if content[10].text else "No hi ha"})
+        content = soup.body.find_all("dd");
+        info.append({ 'nombre': soup.body.find("big").text if soup.body.find("big").text else "No hi ha", 'email': correo if correo else "No hi ha", 'telefono': content[5].text if content[5].text else "No hi ha", 'origen': content[8].text if content[8].text else "No hi ha"})
         
     def __init__(self):
         self.info = []
